@@ -41,9 +41,9 @@ if (NAMESPACE == null
         var close = function () {
             if (_closed) return;	
             _all_ids[_id]['refcount'] -= 1;
-            _id = null;
             _closed = true;
             if (_all_ids[_id]['refcount'] == 0) delete _all_ids[_id];
+        	_id = null;            
         };
 
         persona.close = close;
@@ -69,3 +69,55 @@ if (NAMESPACE == null
 
     NAMESPACE.resource = resource;
 }
+
+function unit_test_resource() {
+	a = NAMESPACE.resource(1);
+	b = NAMESPACE.resource(1);
+	c = NAMESPACE.resource(2);
+
+	console.assert(a.getId()==1);
+	console.assert(b.getId()==1);
+	console.assert(c.getId()==2);
+	console.assert(a.getExpensiveResource()['value']=="I'm a very expensive resource associated with ID 1");
+	console.assert(b.getExpensiveResource()['value']=="I'm a very expensive resource associated with ID 1");
+	console.assert(c.getExpensiveResource()['value']=="I'm a very expensive resource associated with ID 2");
+	console.assert(_all_ids[1]['refcount']==2);
+	console.assert(_all_ids[1]['payload']['value']=="I'm a very expensive resource associated with ID 1");
+	console.assert(_all_ids[2]['refcount']==1);
+	console.assert(_all_ids[2]['payload']['value']=="I'm a very expensive resource associated with ID 2");
+	
+	a.close();
+	console.assert(a.getId()==null);
+	console.assert(b.getId()==1);
+	console.assert(c.getId()==2);
+	console.assert(a.getExpensiveResource()==null);
+	console.assert(b.getExpensiveResource()['value']=="I'm a very expensive resource associated with ID 1");
+	console.assert(c.getExpensiveResource()['value']=="I'm a very expensive resource associated with ID 2");
+	console.assert(_all_ids[1]['refcount']==1);
+	console.assert(_all_ids[1]['payload']['value']=="I'm a very expensive resource associated with ID 1");
+	console.assert(_all_ids[2]['refcount']==1);
+	console.assert(_all_ids[2]['payload']['value']=="I'm a very expensive resource associated with ID 2");
+	
+	b.close();
+	console.assert(a.getId()==null);
+	console.assert(b.getId()==null);
+	console.assert(c.getId()==2);
+	console.assert(a.getExpensiveResource()==null);
+	console.assert(b.getExpensiveResource()==null);
+	console.assert(c.getExpensiveResource()['value']=="I'm a very expensive resource associated with ID 2");
+	console.assert(_all_ids[1]==null);
+	console.assert(_all_ids[2]['refcount']==1);
+	console.assert(_all_ids[2]['payload']['value']=="I'm a very expensive resource associated with ID 2");
+
+	c.close();
+	console.assert(a.getId()==null);
+	console.assert(b.getId()==null);
+	console.assert(c.getId()==null);
+	console.assert(a.getExpensiveResource()==null);
+	console.assert(b.getExpensiveResource()==null);
+	console.assert(c.getExpensiveResource()==null);
+	console.assert(_all_ids[1]==null);
+	console.assert(_all_ids[2]==null);	
+}
+
+unit_test_resource();
